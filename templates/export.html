@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export PDF - PDF Toolkit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .nav {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .nav a {
+            text-decoration: none;
+            color: #667eea;
+            margin-right: 20px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav a:hover, .nav a.active {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .upload-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .format-selection {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+        
+        .format-selection h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        
+        .format-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .format-option {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .format-option:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        .format-option.selected {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+        
+        .format-option .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .format-option .title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .format-option .description {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .format-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .pdf-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            display: none;
+        }
+        
+        .pdf-info h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .pdf-info p {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .info-item {
+            background: #f8f9ff;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .info-item .label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-item .value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            margin-top: 20px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .file-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+        
+        .file-info h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .file-info p {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+            
+            .format-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📤 Export PDF</h1>
+            <p>Convert your PDF documents to other formats</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/">🏠 Home</a>
+            <a href="/merge">📋 Merge</a>
+            <a href="/convert">🔄 Convert</a>
+            <a href="/split">🔀 Split</a>
+            <a href="/export" class="active">📤 Export</a>
+        </div>
+        
+        <div class="content">
+            <form id="exportForm" enctype="multipart/form-data">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Click to select a PDF file</div>
+                    <div class="upload-subtext">or drag and drop it here</div>
+                    <input type="file" id="fileInput" name="file" accept=".pdf" class="file-input">
+                </div>
+                
+                <div class="file-info" id="fileInfo">
+                    <h4>Selected File:</h4>
+                    <p id="fileName"></p>
+                    <p id="fileSize"></p>
+                </div>
+                
+                <div class="pdf-info" id="pdfInfo">
+                    <h4>PDF Information:</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">Pages</div>
+                            <div class="value" id="pageCount">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Export Type</div>
+                            <div class="value" id="exportType">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="format-selection">
+                    <h3>📝 Choose Export Format</h3>
+                    <div class="format-options">
+                        <label class="format-option" for="wordFormat">
+                            <input type="radio" id="wordFormat" name="format" value="word">
+                            <div class="icon">📝</div>
+                            <div class="title">Word Document</div>
+                            <div class="description">Export as .docx file</div>
+                        </label>
+                        
+                        <label class="format-option" for="excelFormat">
+                            <input type="radio" id="excelFormat" name="format" value="excel">
+                            <div class="icon">📊</div>
+                            <div class="title">Excel Spreadsheet</div>
+                            <div class="description">Export as .xlsx file</div>
+                        </label>
+                        
+                        <label class="format-option" for="powerpointFormat">
+                            <input type="radio" id="powerpointFormat" name="format" value="powerpoint">
+                            <div class="icon">📺</div>
+                            <div class="title">PowerPoint</div>
+                            <div class="description">Export as .pptx file</div>
+                        </label>
+                        
+                        <label class="format-option" for="imagesFormat">
+                            <input type="radio" id="imagesFormat" name="format" value="images">
+                            <div class="icon">🖼️</div>
+                            <div class="title">Images</div>
+                            <div class="description">Export as PNG images</div>
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn" id="exportBtn" disabled>
+                    📤 Export PDF
+                </button>
+                
+                <div class="progress" id="progress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                
+                <div class="result" id="result"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.querySelector('.upload-area');
+        const exportBtn = document.getElementById('exportBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const pdfInfo = document.getElementById('pdfInfo');
+        const pageCount = document.getElementById('pageCount');
+        const exportType = document.getElementById('exportType');
+        const formatOptions = document.querySelectorAll('input[name="format"]');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        const result = document.getElementById('result');
+        
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        // Format option selection
+        formatOptions.forEach(option => {
+            option.addEventListener('change', () => {
+                document.querySelectorAll('.format-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                option.closest('.format-option').classList.add('selected');
+                updateExportType();
+                checkFormValidity();
+            });
+        });
+        
+        async function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                fileName.textContent = file.name;
+                fileSize.textContent = `Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+                fileInfo.style.display = 'block';
+                
+                // Update upload area
+                uploadArea.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <div class="upload-text">PDF file selected</div>
+                    <div class="upload-subtext">Click to change file</div>
+                `;
+                
+                // Get PDF info
+                await getPdfInfo(file);
+                checkFormValidity();
+            }
+        }
+        
+        async function getPdfInfo(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/pdf-info', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const info = await response.json();
+                    pageCount.textContent = info.page_count;
+                    pdfInfo.style.display = 'block';
+                    updateExportType();
+                }
+            } catch (error) {
+                console.error('Error getting PDF info:', error);
+            }
+        }
+        
+        function updateExportType() {
+            const selectedFormat = document.querySelector('input[name="format"]:checked');
+            const pages = parseInt(pageCount.textContent) || 0;
+            
+            if (selectedFormat && pages > 0) {
+                if (selectedFormat.value === 'images') {
+                    exportType.textContent = pages === 1 ? 'Single Image' : 'ZIP Archive';
+                } else {
+                    exportType.textContent = selectedFormat.closest('.format-option').querySelector('.title').textContent;
+                }
+            } else {
+                exportType.textContent = '-';
+            }
+        }
+        
+        function checkFormValidity() {
+            const hasFile = fileInput.files.length > 0;
+            const hasFormat = document.querySelector('input[name="format"]:checked');
+            exportBtn.disabled = !(hasFile && hasFormat);
+        }
+        
+        document.getElementById('exportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const selectedFormat = document.querySelector('input[name="format"]:checked');
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('format', selectedFormat.value);
+            
+            exportBtn.disabled = true;
+            exportBtn.textContent = '🔄 Processing...';
+            progress.style.display = 'block';
+            result.style.display = 'none';
+            
+            // Simulate progress
+            let progressValue = 0;
+            const progressInterval = setInterval(() => {
+                progressValue += Math.random() * 30;
+                if (progressValue > 90) progressValue = 90;
+                progressBar.style.width = progressValue + '%';
+            }, 200);
+            
+            try {
+                const response = await fetch('/api/export', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                
+                if (response.ok) {
+                    // Download the file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // Get filename from response header or use default
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = `export.${selectedFormat.value === 'word' ? 'docx' : 
+                                            selectedFormat.value === 'excel' ? 'xlsx' :
+                                            selectedFormat.value === 'powerpoint' ? 'pptx' : 'zip'}`;
+                    
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="(.+)"/);
+                        if (match) filename = match[1];
+                    }
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    result.className = 'result success';
+                    result.innerHTML = '✅ PDF exported successfully! Download started automatically.';
+                    result.style.display = 'block';
+                } else {
+                    const errorData = await response.json();
+                    result.className = 'result error';
+                    result.innerHTML = `❌ Error: ${errorData.error}`;
+                    result.style.display = 'block';
+                }
+            } catch (error) {
+                clearInterval(progressInterval);
+                result.className = 'result error';
+                result.innerHTML = `❌ Error: ${error.message}`;
+                result.style.display = 'block';
+            }
+            
+            exportBtn.disabled = false;
+            exportBtn.textContent = '📤 Export PDF';
+            setTimeout(() => {
+                progress.style.display = 'none';
+                progressBar.style.width = '0%';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

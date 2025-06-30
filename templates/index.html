@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Toolkit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 40px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px 20px;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .feature-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .feature-description {
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .supported-formats {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .formats-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1976d2;
+        }
+        
+        .format-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .format-tag {
+            background: #1976d2;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+        }
+        
+        @media (min-width: 601px) and (max-width: 900px) {
+            .features {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Toolkit</h1>
+        <p class="subtitle">Your all-in-one solution for PDF operations</p>
+        
+        <div class="features">
+            <a href="/merge" class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <div class="feature-title">Merge PDFs</div>
+                <div class="feature-description">
+                    Combine multiple PDF files into a single document with ease
+                </div>
+            </a>
+            
+            <a href="/convert" class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-title">Convert to PDF</div>
+                <div class="feature-description">
+                    Convert various file formats to PDF format instantly
+                </div>
+            </a>
+            
+            <a href="/split" class="feature-card">
+                <div class="feature-icon">🔀</div>
+                <div class="feature-title">Split PDF</div>
+                <div class="feature-description">
+                    Extract specific pages from PDF documents
+                </div>
+            </a>
+            
+            <a href="/export" class="feature-card">
+                <div class="feature-icon">📤</div>
+                <div class="feature-title">Export PDF</div>
+                <div class="feature-description">
+                    Convert PDFs to Word, Excel, PowerPoint, or Images
+                </div>
+            </a>
+        </div>
+        
+        <div class="supported-formats">
+            <div class="formats-title">Supported Formats</div>
+            <div class="format-list">
+                <span class="format-tag">PDF</span>
+                <span class="format-tag">DOCX</span>
+                <span class="format-tag">XLSX</span>
+                <span class="format-tag">PPTX</span>
+                <span class="format-tag">TXT</span>
+                <span class="format-tag">MD</span>
+                <span class="format-tag">JPG</span>
+                <span class="format-tag">PNG</span>
+                <span class="format-tag">BMP</span>
+                <span class="format-tag">TIFF</span>
+                <span class="format-tag">GIF</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
