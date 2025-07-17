@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All-in-One File Converter - PDF Toolkit</title>
+    <title>All-in-One File Converter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
@@ -14,7 +14,6 @@
         .prose table { border-collapse: collapse; width: 100%; }
         .prose th, .prose td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
         .prose th { background-color: #f2f2f2; }
-        
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -25,6 +24,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.2/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <main class="container mx-auto p-4 sm:p-6 lg:p-8">
         <!-- Home Screen -->
@@ -34,13 +35,14 @@
                     All-in-One File Converter
                 </h1>
                 <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-500 dark:text-gray-400">
-                    Your free, private, and powerful toolkit for converting files and managing PDFs with ease.
+                    Your free, private, and powerful toolkit for converting files. All conversions happen locally in your browser - no uploads required!
                 </p>
             </div>
             <div id="tool-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <!-- Tool cards will be injected here by JavaScript -->
             </div>
         </div>
+
         <!-- Conversion Interface -->
         <div id="conversion-screen" class="hidden">
             <div class="w-full max-w-3xl mx-auto">
@@ -66,17 +68,6 @@
                         <div id="page-range-container" class="hidden">
                             <label for="page-ranges" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Page Ranges (e.g., 1-3,5,7-10):</label>
                             <input type="text" id="page-ranges" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm" placeholder="1-3,5,7-10">
-                        </div>
-
-                        <!-- Export Format Selector -->
-                        <div id="export-format-container" class="hidden">
-                            <label for="export-format-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Export to:</label>
-                            <select id="export-format-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
-                                <option value="word">Word (.docx)</option>
-                                <option value="excel">Excel (.xlsx)</option>
-                                <option value="powerpoint">PowerPoint (.pptx)</option>
-                                <option value="images">Images (.png)</option>
-                            </select>
                         </div>
 
                         <!-- File Input -->
@@ -105,10 +96,16 @@
     </main>
 
     <footer class="text-center mt-16 mb-8 text-gray-500 dark:text-gray-400 text-sm">
-        <p>&copy; 2024 All-in-One File Converter. Client-side conversions are done locally in your browser for privacy.</p>
+        <p>&copy; 2024 All-in-One File Converter. All conversions are done locally in your browser for complete privacy.</p>
     </footer>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- GLOBAL VARIABLES ---
+            const { jsPDF } = window.jspdf;
+            const { PDFLib } = window;
+            const { PDFDocument, rgb } = PDFLib;
+
             // --- DOM ELEMENTS ---
             const homeScreen = document.getElementById('home-screen');
             const conversionScreen = document.getElementById('conversion-screen');
@@ -124,8 +121,6 @@
             const outputFormatSelect = document.getElementById('output-format-select');
             const pageRangeContainer = document.getElementById('page-range-container');
             const pageRangesInput = document.getElementById('page-ranges');
-            const exportFormatContainer = document.getElementById('export-format-container');
-            const exportFormatSelect = document.getElementById('export-format-select');
             
             let currentFiles = [];
             let currentTool = null;
@@ -135,44 +130,13 @@
                 merge: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"><path d="M8 6v6h8V6"></path><path d="M4 12v6h16v-6"></path><path d="M12 18v3"></path></svg>`,
                 convert: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
                 split: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="13" x2="15" y2="13"></line><line x1="12" y1="10" x2="12" y2="16"></line></svg>`,
-                export: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
                 image: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+                doc: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+                sheet: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="17"></line></svg>`,
             };
 
             // --- TOOL DEFINITIONS ---
             const tools = [
-                { 
-                    id: 'merge', 
-                    icon: icons.merge, 
-                    title: 'Merge PDFs', 
-                    description: 'Combine multiple PDF files into a single document.',
-                    accept: '.pdf',
-                    multiple: true
-                },
-                { 
-                    id: 'convert', 
-                    icon: icons.convert, 
-                    title: 'Convert to PDF', 
-                    description: 'Convert various file formats to PDF documents.',
-                    accept: '.docx,.xlsx,.pptx,.txt,.md,.jpg,.jpeg,.png,.bmp,.tiff,.gif',
-                    multiple: false
-                },
-                { 
-                    id: 'split', 
-                    icon: icons.split, 
-                    title: 'Split PDF', 
-                    description: 'Extract specific pages from PDF documents.',
-                    accept: '.pdf',
-                    multiple: false
-                },
-                { 
-                    id: 'export', 
-                    icon: icons.export, 
-                    title: 'Export PDF', 
-                    description: 'Convert PDF files to Word, Excel, PowerPoint, or images.',
-                    accept: '.pdf',
-                    multiple: false
-                },
                 { 
                     id: 'imageConverter', 
                     icon: icons.image, 
@@ -192,7 +156,7 @@
                 },
                 { 
                     id: 'doc2pdf', 
-                    icon: icons.convert, 
+                    icon: icons.doc, 
                     title: 'DOCX to PDF', 
                     description: 'Turn your Word documents into easily shareable PDFs.',
                     accept: '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -200,10 +164,26 @@
                 },
                 { 
                     id: 'sheet2pdf', 
-                    icon: icons.convert, 
+                    icon: icons.sheet, 
                     title: 'Excel to PDF', 
                     description: 'Convert Excel spreadsheets into PDF files.',
                     accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    multiple: false
+                },
+                { 
+                    id: 'merge', 
+                    icon: icons.merge, 
+                    title: 'Merge PDFs', 
+                    description: 'Combine multiple PDF files into a single document.',
+                    accept: '.pdf',
+                    multiple: true
+                },
+                { 
+                    id: 'split', 
+                    icon: icons.split, 
+                    title: 'Split PDF', 
+                    description: 'Extract specific pages from PDF documents.',
+                    accept: '.pdf',
                     multiple: false
                 },
             ];
@@ -245,12 +225,9 @@
                 // Show/hide specific controls based on tool
                 outputFormatContainer.classList.add('hidden');
                 pageRangeContainer.classList.add('hidden');
-                exportFormatContainer.classList.add('hidden');
 
                 if (tool.id === 'split') {
                     pageRangeContainer.classList.remove('hidden');
-                } else if (tool.id === 'export') {
-                    exportFormatContainer.classList.remove('hidden');
                 } else if (tool.id === 'imageConverter' && tool.outputs) {
                     outputFormatSelect.innerHTML = '';
                     tool.outputs.forEach(format => {
@@ -297,14 +274,14 @@
                     }
                     convertButton.classList.remove('hidden');
                     convertButton.disabled = false;
-                    convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Process Files</span>`;
+                    convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Convert Files</span>`;
                     statusArea.innerHTML = '';
                 }
             });
             
             convertButton.addEventListener('click', handleConvert);
 
-            // --- CONVERSION LOGIC ---
+            // --- UTILITY FUNCTIONS ---
             function getOutputFilename(inputName, newExtension) {
                 const nameWithoutExtension = inputName.split('.').slice(0, -1).join('.');
                 return `${nameWithoutExtension || 'converted'}.${newExtension}`;
@@ -328,8 +305,8 @@
             function setDownloadLink(url, filename) {
                 statusArea.innerHTML = `
                     <div class="bg-green-100 dark:bg-green-900/50 p-6 rounded-lg text-center">
-                      <h3 class="text-xl font-bold text-green-800 dark:text-green-200 mb-4">Processing Successful!</h3>
-                      <a href="${url}" class="inline-flex items-center justify-center gap-3 bg-green-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 text-lg">
+                      <h3 class="text-xl font-bold text-green-800 dark:text-green-200 mb-4">Conversion Successful!</h3>
+                      <a href="${url}" download="${filename}" class="inline-flex items-center justify-center gap-3 bg-green-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 text-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         <span>Download ${filename}</span>
                       </a>
@@ -337,95 +314,67 @@
                 `;
             }
 
+            function resetButtonState() {
+                convertButton.disabled = false;
+                convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Convert Files</span>`;
+            }
+
+            // --- CONVERSION HANDLERS ---
             async function handleConvert() {
                 if (currentFiles.length === 0 || !currentTool) return;
 
                 convertButton.disabled = true;
-                convertButton.innerHTML = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg><span>Processing...</span>`;
+                convertButton.innerHTML = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg><span>Converting...</span>`;
                 
-                setStatus('loading', 'Processing files...', 'Please wait while we process your request.');
+                setStatus('loading', 'Converting files...', 'Please wait while we process your request.');
 
                 try {
-                    const formData = new FormData();
-                    let endpoint = '';
-
                     switch (currentTool.id) {
-                        case 'merge':
-                            endpoint = '/api/merge';
-                            currentFiles.forEach(file => {
-                                formData.append('files', file);
-                            });
+                        case 'imageConverter':
+                            await handleImageConversion();
                             break;
-                        case 'convert':
-                            endpoint = '/api/convert';
-                            formData.append('file', currentFiles[0]);
+                        case 'img2pdf':
+                            await handleImageToPDF();
+                            break;
+                        case 'doc2pdf':
+                            await handleDocToPDF();
+                            break;
+                        case 'sheet2pdf':
+                            await handleSheetToPDF();
+                            break;
+                        case 'merge':
+                            await handlePDFMerge();
                             break;
                         case 'split':
-                            endpoint = '/api/split';
-                            formData.append('file', currentFiles[0]);
-                            formData.append('page_ranges', pageRangesInput.value);
+                            await handlePDFSplit();
                             break;
-                        case 'export':
-                            endpoint = '/api/export';
-                            formData.append('file', currentFiles[0]);
-                            formData.append('format', exportFormatSelect.value);
-                            break;
-                        case 'imageConverter':
-                            return await handleImageConversion();
-                        case 'img2pdf':
-                            return await handleImageToPDF();
-                        case 'doc2pdf':
-                            return await handleDocToPDF();
-                        case 'sheet2pdf':
-                            return await handleSheetToPDF();
-                    }
-
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const contentDisposition = response.headers.get('Content-Disposition');
-                        let filename = 'download';
-                        if (contentDisposition) {
-                            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-                            if (filenameMatch) {
-                                filename = filenameMatch[1];
-                            }
-                        }
-                        setDownloadLink(url, filename);
-                    } else {
-                        const error = await response.json();
-                        setStatus('error', 'Processing failed', error.error || 'An error occurred while processing your files.');
                     }
                 } catch (error) {
-                    console.error('Error:', error);
-                    setStatus('error', 'Network error', 'Failed to connect to the server. Please try again.');
-                } finally {
-                    convertButton.disabled = false;
-                    convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Process Files</span>`;
+                    console.error('Conversion error:', error);
+                    setStatus('error', 'Conversion failed', 'An error occurred while processing your files. Please try again.');
+                    resetButtonState();
                 }
             }
 
-            // --- CLIENT-SIDE CONVERSION FUNCTIONS ---
+            // --- IMAGE CONVERSION ---
             async function handleImageConversion() {
-                const outputFormat = outputFormatSelect.value; // 'jpg', 'png', 'webp'
+                const outputFormat = outputFormatSelect.value;
                 const mimeType = `image/${outputFormat}`;
                 const outputExtension = outputFormat;
 
                 let blobToProcess = currentFiles[0];
                 if (currentFiles[0].type.startsWith('image/heic') || currentFiles[0].type.startsWith('image/heif')) {
-                    setStatus('loading', 'Processing HEIC...', 'Please wait while the initial conversion happens.');
+                    setStatus('loading', 'Processing HEIC...', 'Converting HEIC/HEIF format...');
                     blobToProcess = await heic2any({ blob: currentFiles[0], toType: "image/png" });
                 }
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = new Image();
-                    img.onerror = () => setStatus('error', 'Image Load Error', 'Could not load the selected image. It may be corrupt.');
+                    img.onerror = () => {
+                        setStatus('error', 'Image Load Error', 'Could not load the selected image. It may be corrupt.');
+                        resetButtonState();
+                    };
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         canvas.width = img.width;
@@ -449,6 +398,7 @@
                 reader.readAsDataURL(blobToProcess);
             }
 
+            // --- IMAGE TO PDF ---
             async function handleImageToPDF() {
                 if (currentFiles.length === 1) {
                     // Single image
@@ -456,7 +406,11 @@
                     reader.onload = (e) => {
                         const img = new Image();
                         img.onload = () => {
-                            const pdf = new jsPDF({ orientation: img.width > img.height ? 'l' : 'p', unit: 'px', format: [img.width, img.height] });
+                            const pdf = new jsPDF({ 
+                                orientation: img.width > img.height ? 'l' : 'p', 
+                                unit: 'px', 
+                                format: [img.width, img.height] 
+                            });
                             pdf.addImage(img, 'PNG', 0, 0, img.width, img.height);
                             setDownloadLink(pdf.output('bloburl'), getOutputFilename(currentFiles[0].name, 'pdf'));
                             resetButtonState();
@@ -510,19 +464,20 @@
                 }
             }
 
+            // --- DOCX TO PDF ---
             async function handleDocToPDF() {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     try {
                         const arrayBuffer = e.target.result;
                         const result = await mammoth.convertToHtml({ arrayBuffer });
-                        const htmlContent = `<div class="prose p-8">${result.value}</div>`;
+                        const htmlContent = `<div style="padding: 40px; font-family: Arial, sans-serif; line-height: 1.6;">${result.value}</div>`;
                         
                         const renderContainer = document.createElement('div');
                         renderContainer.innerHTML = htmlContent;
                         renderContainer.style.position = 'absolute';
                         renderContainer.style.left = '-9999px';
-                        renderContainer.style.width = '1000px';
+                        renderContainer.style.width = '800px';
                         renderContainer.style.background = 'white';
                         document.body.appendChild(renderContainer);
 
@@ -530,7 +485,11 @@
                         document.body.removeChild(renderContainer);
 
                         const imgData = canvas.toDataURL('image/png');
-                        const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? 'l' : 'p', unit: 'px', format: [canvas.width, canvas.height] });
+                        const pdf = new jsPDF({ 
+                            orientation: canvas.width > canvas.height ? 'l' : 'p', 
+                            unit: 'px', 
+                            format: [canvas.width, canvas.height] 
+                        });
                         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
                         setDownloadLink(pdf.output('bloburl'), getOutputFilename(currentFiles[0].name, 'pdf'));
                         resetButtonState();
@@ -543,6 +502,7 @@
                 reader.readAsArrayBuffer(currentFiles[0]);
             }
 
+            // --- EXCEL TO PDF ---
             async function handleSheetToPDF() {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
@@ -551,7 +511,7 @@
                         const workbook = XLSX.read(arrayBuffer, { type: 'buffer' });
                         const sheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[sheetName];
-                        const htmlContent = `<div class="prose">${XLSX.utils.sheet_to_html(worksheet)}</div>`;
+                        const htmlContent = `<div style="padding: 20px; font-family: Arial, sans-serif;">${XLSX.utils.sheet_to_html(worksheet)}</div>`;
                         
                         const renderContainer = document.createElement('div');
                         renderContainer.innerHTML = htmlContent;
@@ -565,7 +525,11 @@
                         document.body.removeChild(renderContainer);
 
                         const imgData = canvas.toDataURL('image/png');
-                        const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? 'l' : 'p', unit: 'px', format: [canvas.width, canvas.height] });
+                        const pdf = new jsPDF({ 
+                            orientation: canvas.width > canvas.height ? 'l' : 'p', 
+                            unit: 'px', 
+                            format: [canvas.width, canvas.height] 
+                        });
                         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
                         setDownloadLink(pdf.output('bloburl'), getOutputFilename(currentFiles[0].name, 'pdf'));
                         resetButtonState();
@@ -578,13 +542,99 @@
                 reader.readAsArrayBuffer(currentFiles[0]);
             }
 
-            function resetButtonState() {
-                convertButton.disabled = false;
-                convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Process Files</span>`;
+            // --- PDF MERGE ---
+            async function handlePDFMerge() {
+                try {
+                    const mergedPdf = await PDFDocument.create();
+                    
+                    for (const file of currentFiles) {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const pdf = await PDFDocument.load(arrayBuffer);
+                        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                        copiedPages.forEach((page) => mergedPdf.addPage(page));
+                    }
+                    
+                    const pdfBytes = await mergedPdf.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    setDownloadLink(url, 'merged.pdf');
+                    resetButtonState();
+                } catch (err) {
+                    console.error("PDF merge error:", err);
+                    setStatus('error', 'Failed to merge PDFs', 'One or more PDF files might be corrupted or password-protected.');
+                    resetButtonState();
+                }
+            }
+
+            // --- PDF SPLIT ---
+            async function handlePDFSplit() {
+                try {
+                    const pageRanges = pageRangesInput.value;
+                    if (!pageRanges) {
+                        setStatus('error', 'Page ranges required', 'Please specify which pages to extract (e.g., 1-3,5,7-10).');
+                        resetButtonState();
+                        return;
+                    }
+
+                    // Parse page ranges
+                    const pageList = [];
+                    const ranges = pageRanges.replace(/\s/g, '').split(',');
+                    for (const range of ranges) {
+                        if (range.includes('-')) {
+                            const [start, end] = range.split('-').map(Number);
+                            for (let i = start; i <= end; i++) {
+                                pageList.push(i - 1); // Convert to 0-based indexing
+                            }
+                        } else {
+                            pageList.push(Number(range) - 1); // Convert to 0-based indexing
+                        }
+                    }
+
+                    const arrayBuffer = await currentFiles[0].arrayBuffer();
+                    const pdf = await PDFDocument.load(arrayBuffer);
+                    const newPdf = await PDFDocument.create();
+                    
+                    const pages = await newPdf.copyPages(pdf, pageList);
+                    pages.forEach((page) => newPdf.addPage(page));
+                    
+                    const pdfBytes = await newPdf.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    setDownloadLink(url, getOutputFilename(currentFiles[0].name, 'pdf'));
+                    resetButtonState();
+                } catch (err) {
+                    console.error("PDF split error:", err);
+                    setStatus('error', 'Failed to split PDF', 'The PDF file might be corrupted, password-protected, or the page range is invalid.');
+                    resetButtonState();
+                }
             }
 
             // --- INITIALIZATION ---
             renderTools();
+
+            // Add drag and drop support
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            document.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (conversionScreen.classList.contains('hidden')) return;
+                
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
         });
     </script>
 </body>
