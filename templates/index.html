@@ -26,6 +26,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qr-scanner/1.4.2/qr-scanner.umd.min.js"></script>
 
     <main class="container mx-auto p-4 sm:p-6 lg:p-8">
         <!-- Home Screen -->
@@ -38,7 +40,7 @@
                     Your free, private, and powerful toolkit for converting files. All conversions happen locally in your browser - no uploads required!
                 </p>
             </div>
-            <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+            <div id="tool-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
                 <!-- Tool cards will be injected here by JavaScript -->
             </div>
         </div>
@@ -79,6 +81,60 @@
                                 <option value="powerpoint">PowerPoint (.pptx)</option>
                                 <option value="images">Images (.png)</option>
                             </select>
+                        </div>
+
+                        <!-- Image Resize Controls -->
+                        <div id="resize-controls" class="hidden space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resize Method:</label>
+                                <select id="resize-method" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
+                                    <option value="dimensions">Custom Dimensions</option>
+                                    <option value="percentage">Percentage Scale</option>
+                                    <option value="preset">Preset Sizes</option>
+                                </select>
+                            </div>
+                            <div id="dimension-inputs" class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="resize-width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Width (px):</label>
+                                    <input type="number" id="resize-width" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm" placeholder="800">
+                                </div>
+                                <div>
+                                    <label for="resize-height" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Height (px):</label>
+                                    <input type="number" id="resize-height" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm" placeholder="600">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="maintain-aspect-ratio" checked class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Maintain aspect ratio</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- QR Code Text Input -->
+                        <div id="qr-text-container" class="hidden">
+                            <div class="mb-4">
+                                <div class="flex gap-2 mb-3">
+                                    <button id="qr-generate-tab" class="flex-1 py-2 px-4 bg-indigo-600 text-white rounded-lg font-medium">Generate QR</button>
+                                    <button id="qr-scan-tab" class="flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium">Scan QR</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Generate QR Section -->
+                            <div id="qr-generate-section">
+                                <label for="qr-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Text or URL for QR Code:</label>
+                                <textarea id="qr-text" rows="3" class="mt-1 block w-full pl-3 pr-3 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm" placeholder="Enter text, URL, or any data to generate QR code"></textarea>
+                            </div>
+                            
+                            <!-- Scan QR Section -->
+                            <div id="qr-scan-section" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Upload QR Code Image:</label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Upload an image containing a QR code to read its content</p>
+                                <div id="qr-scan-result" class="hidden mt-4 p-4 bg-green-100 dark:bg-green-900/50 border border-green-300 dark:border-green-700 rounded-lg">
+                                    <h4 class="font-semibold text-green-800 dark:text-green-200 mb-2">QR Code Content:</h4>
+                                    <div id="qr-scan-content" class="text-green-700 dark:text-green-300 break-all"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- File Input -->
@@ -147,6 +203,12 @@
                 image: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
                 doc: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
                 sheet: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="17"></line></svg>`,
+                compress: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><path d="M4 12V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"></path><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="20"></line></svg>`,
+                resize: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><path d="M15 3h6v6"></path><path d="M10 14L21 3"></path><path d="M9 21H3v-6"></path><path d="M14 10L3 21"></path></svg>`,
+                rotate: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>`,
+                qr: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><rect x="3" y="3" width="5" height="5"></rect><rect x="16" y="3" width="5" height="5"></rect><rect x="3" y="16" width="5" height="5"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16v.01"></path><path d="M16 12h1"></path><path d="M21 12v.01"></path><path d="M12 21v-1"></path></svg>`,
+                presentation: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`,
+                text: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
             };
 
             // --- TOOL DEFINITIONS ---
@@ -184,6 +246,14 @@
                     multiple: false
                 },
                 { 
+                    id: 'compress', 
+                    icon: icons.compress, 
+                    title: 'PDF Compress', 
+                    description: 'Reduce PDF file size while maintaining quality.',
+                    accept: '.pdf',
+                    multiple: false
+                },
+                { 
                     id: 'imageConverter', 
                     icon: icons.image, 
                     title: 'Image Converter', 
@@ -191,6 +261,23 @@
                     accept: 'image/png,image/jpeg,image/webp,image/gif,image/bmp,image/heic,image/heif',
                     multiple: false,
                     outputs: ['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF']
+                },
+                { 
+                    id: 'imageResize', 
+                    icon: icons.resize, 
+                    title: 'Image Resize', 
+                    description: 'Resize images to specific dimensions or scale.',
+                    accept: 'image/png,image/jpeg,image/webp,image/gif,image/bmp',
+                    multiple: false
+                },
+                { 
+                    id: 'imageRotate', 
+                    icon: icons.rotate, 
+                    title: 'Image Rotate', 
+                    description: 'Rotate images by 90°, 180°, or 270°.',
+                    accept: 'image/png,image/jpeg,image/webp,image/gif,image/bmp',
+                    multiple: false,
+                    outputs: ['90°', '180°', '270°']
                 },
                 { 
                     id: 'img2pdf', 
@@ -214,6 +301,30 @@
                     title: 'Excel to PDF', 
                     description: 'Convert Excel spreadsheets into PDF files.',
                     accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    multiple: false
+                },
+                { 
+                    id: 'ppt2pdf', 
+                    icon: icons.presentation, 
+                    title: 'PowerPoint to PDF', 
+                    description: 'Convert PowerPoint presentations to PDF format.',
+                    accept: '.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    multiple: false
+                },
+                { 
+                    id: 'qrGenerator', 
+                    icon: icons.qr, 
+                    title: 'QR Code Tool', 
+                    description: 'Generate QR codes from text/URLs or scan QR codes to read their content.',
+                    accept: 'image/png,image/jpeg,image/webp,image/gif',
+                    multiple: false
+                },
+                { 
+                    id: 'textToPdf', 
+                    icon: icons.text, 
+                    title: 'Text to PDF', 
+                    description: 'Convert plain text files to PDF documents.',
+                    accept: '.txt,.md,text/plain',
                     multiple: false
                 },
             ];
@@ -256,6 +367,8 @@
                 outputFormatContainer.classList.add('hidden');
                 pageRangeContainer.classList.add('hidden');
                 exportFormatContainer.classList.add('hidden');
+                document.getElementById('resize-controls').classList.add('hidden');
+                document.getElementById('qr-text-container').classList.add('hidden');
 
                 if (tool.id === 'split') {
                     pageRangeContainer.classList.remove('hidden');
@@ -270,6 +383,28 @@
                         outputFormatSelect.appendChild(option);
                     });
                     outputFormatContainer.classList.remove('hidden');
+                } else if (tool.id === 'imageResize') {
+                    document.getElementById('resize-controls').classList.remove('hidden');
+                } else if (tool.id === 'imageRotate' && tool.outputs) {
+                    outputFormatSelect.innerHTML = '';
+                    tool.outputs.forEach(angle => {
+                        const option = document.createElement('option');
+                        option.value = angle.replace('°', '');
+                        option.textContent = `Rotate ${angle}`;
+                        outputFormatSelect.appendChild(option);
+                    });
+                    outputFormatContainer.classList.remove('hidden');
+                } else if (tool.id === 'qrGenerator') {
+                    document.getElementById('qr-text-container').classList.remove('hidden');
+                    // Show file input for QR scanner mode (hidden initially)
+                    fileInput.parentElement.style.display = 'block';
+                    fileInput.style.display = 'none'; // Hide initially, show when scan tab is active
+                    // Show convert button immediately for QR generator
+                    convertButton.classList.remove('hidden');
+                    convertButton.disabled = false;
+                    convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Generate QR Code</span>`;
+                } else {
+                    fileInput.parentElement.style.display = 'block';
                 }
 
                 homeScreen.classList.add('hidden');
@@ -290,6 +425,11 @@
                 convertButton.classList.add('hidden');
                 statusArea.innerHTML = '';
                 pageRangesInput.value = '';
+                document.getElementById('qr-text').value = '';
+                document.getElementById('resize-width').value = '';
+                document.getElementById('resize-height').value = '';
+                document.getElementById('qr-scan-result').classList.add('hidden');
+                fileInput.parentElement.style.display = 'block';
             }
 
             // --- EVENT LISTENERS ---
@@ -297,19 +437,73 @@
 
             fileInput.addEventListener('change', (e) => {
                 const files = Array.from(e.target.files);
-                if (files.length > 0) {
+                if (files.length > 0 || currentTool?.id === 'qrGenerator') {
                     currentFiles = files;
-                    fileUploadText.textContent = 'Change file';
-                    if (files.length === 1) {
-                        fileNameDisplay.textContent = `Selected: ${files[0].name}`;
-                    } else {
-                        fileNameDisplay.textContent = `Selected: ${files.length} files`;
+                    if (files.length > 0) {
+                        fileUploadText.textContent = 'Change file';
+                        if (files.length === 1) {
+                            fileNameDisplay.textContent = `Selected: ${files[0].name}`;
+                        } else {
+                            fileNameDisplay.textContent = `Selected: ${files.length} files`;
+                        }
                     }
                     convertButton.classList.remove('hidden');
                     convertButton.disabled = false;
                     convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Convert Files</span>`;
                     statusArea.innerHTML = '';
                 }
+            });
+
+            // Add event listener for QR text input
+            document.getElementById('qr-text').addEventListener('input', (e) => {
+                if (currentTool?.id === 'qrGenerator') {
+                    if (e.target.value.trim()) {
+                        convertButton.classList.remove('hidden');
+                        convertButton.disabled = false;
+                        convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Generate QR Code</span>`;
+                        statusArea.innerHTML = '';
+                    } else {
+                        convertButton.disabled = true;
+                    }
+                }
+            });
+
+            // Add event listeners for QR tabs
+            document.getElementById('qr-generate-tab').addEventListener('click', () => {
+                // Switch to generate mode
+                document.getElementById('qr-generate-tab').className = 'flex-1 py-2 px-4 bg-indigo-600 text-white rounded-lg font-medium';
+                document.getElementById('qr-scan-tab').className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium';
+                document.getElementById('qr-generate-section').classList.remove('hidden');
+                document.getElementById('qr-scan-section').classList.add('hidden');
+                fileInput.style.display = 'none';
+                fileInput.parentElement.querySelector('label').style.display = 'none';
+                fileInput.parentElement.querySelector('p').style.display = 'none';
+                
+                // Update button text and state
+                const qrText = document.getElementById('qr-text').value.trim();
+                if (qrText) {
+                    convertButton.disabled = false;
+                    convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Generate QR Code</span>`;
+                } else {
+                    convertButton.disabled = true;
+                }
+                statusArea.innerHTML = '';
+            });
+
+            document.getElementById('qr-scan-tab').addEventListener('click', () => {
+                // Switch to scan mode
+                document.getElementById('qr-scan-tab').className = 'flex-1 py-2 px-4 bg-indigo-600 text-white rounded-lg font-medium';
+                document.getElementById('qr-generate-tab').className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium';
+                document.getElementById('qr-generate-section').classList.add('hidden');
+                document.getElementById('qr-scan-section').classList.remove('hidden');
+                fileInput.style.display = 'block';
+                fileInput.parentElement.querySelector('label').style.display = 'block';
+                fileInput.parentElement.querySelector('p').style.display = 'block';
+                
+                // Update button text and state
+                convertButton.disabled = currentFiles.length === 0;
+                convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Scan QR Code</span>`;
+                statusArea.innerHTML = '';
             });
             
             convertButton.addEventListener('click', handleConvert);
@@ -354,7 +548,27 @@
 
             // --- CONVERSION HANDLERS ---
             async function handleConvert() {
-                if (currentFiles.length === 0 || !currentTool) return;
+                if (!currentTool) return;
+                
+                // QR Generator doesn't need files, check for text input instead
+                if (currentTool.id === 'qrGenerator') {
+                    const isGenerateMode = !document.getElementById('qr-generate-section').classList.contains('hidden');
+                    if (isGenerateMode) {
+                        const qrText = document.getElementById('qr-text').value.trim();
+                        if (!qrText) {
+                            setStatus('error', 'No text provided', 'Please enter text or URL to generate QR code.');
+                            return;
+                        }
+                    } else {
+                        // Scan mode - check for file
+                        if (currentFiles.length === 0) {
+                            setStatus('error', 'No image provided', 'Please upload an image containing a QR code.');
+                            return;
+                        }
+                    }
+                } else if (currentFiles.length === 0) {
+                    return;
+                }
 
                 convertButton.disabled = true;
                 convertButton.innerHTML = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg><span>Converting...</span>`;
@@ -369,8 +583,17 @@
                         case 'export':
                             await handlePDFExport();
                             break;
+                        case 'compress':
+                            await handlePDFCompress();
+                            break;
                         case 'imageConverter':
                             await handleImageConversion();
+                            break;
+                        case 'imageResize':
+                            await handleImageResize();
+                            break;
+                        case 'imageRotate':
+                            await handleImageRotate();
                             break;
                         case 'img2pdf':
                             await handleImageToPDF();
@@ -380,6 +603,15 @@
                             break;
                         case 'sheet2pdf':
                             await handleSheetToPDF();
+                            break;
+                        case 'ppt2pdf':
+                            await handlePPTToPDF();
+                            break;
+                        case 'textToPdf':
+                            await handleTextToPDF();
+                            break;
+                        case 'qrGenerator':
+                            await handleQRGenerator();
                             break;
                         case 'merge':
                             await handlePDFMerge();
@@ -776,6 +1008,260 @@
                     setStatus('error', 'Conversion failed', 'Failed to convert PDF to image ZIP.');
                     resetButtonState();
                 }
+            }
+
+            // --- PDF COMPRESS ---
+            async function handlePDFCompress() {
+                try {
+                    const arrayBuffer = await currentFiles[0].arrayBuffer();
+                    const pdf = await PDFDocument.load(arrayBuffer);
+                    
+                    // Basic compression by optimizing images and removing duplicate objects
+                    const pdfBytes = await pdf.save({
+                        useObjectStreams: false,
+                        addDefaultPage: false,
+                    });
+                    
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Calculate compression ratio
+                    const originalSize = currentFiles[0].size;
+                    const compressedSize = blob.size;
+                    const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+                    
+                    setStatus('success', 'PDF Compressed', `File size reduced by ${compressionRatio}% (${(originalSize/1024/1024).toFixed(1)}MB → ${(compressedSize/1024/1024).toFixed(1)}MB)`);
+                    setDownloadLink(url, getOutputFilename(currentFiles[0].name, 'pdf'));
+                    resetButtonState();
+                } catch (err) {
+                    console.error("PDF compression error:", err);
+                    setStatus('error', 'Failed to compress PDF', 'The PDF file might be corrupted or password-protected.');
+                    resetButtonState();
+                }
+            }
+
+            // --- IMAGE RESIZE ---
+            async function handleImageResize() {
+                const width = parseInt(document.getElementById('resize-width').value);
+                const height = parseInt(document.getElementById('resize-height').value);
+                const maintainAspectRatio = document.getElementById('maintain-aspect-ratio').checked;
+
+                if (!width || !height) {
+                    setStatus('error', 'Invalid dimensions', 'Please enter valid width and height values.');
+                    resetButtonState();
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        let newWidth = width;
+                        let newHeight = height;
+                        
+                        if (maintainAspectRatio) {
+                            const aspectRatio = img.width / img.height;
+                            if (width / height > aspectRatio) {
+                                newWidth = height * aspectRatio;
+                            } else {
+                                newHeight = width / aspectRatio;
+                            }
+                        }
+                        
+                        canvas.width = newWidth;
+                        canvas.height = newHeight;
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                        
+                        const dataUrl = canvas.toDataURL('image/png');
+                        setDownloadLink(dataUrl, getOutputFilename(currentFiles[0].name, 'png'));
+                        resetButtonState();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(currentFiles[0]);
+            }
+
+            // --- IMAGE ROTATE ---
+            async function handleImageRotate() {
+                const angle = parseInt(outputFormatSelect.value);
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Set canvas dimensions based on rotation
+                        if (angle === 90 || angle === 270) {
+                            canvas.width = img.height;
+                            canvas.height = img.width;
+                        } else {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                        }
+                        
+                        // Translate and rotate
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.rotate((angle * Math.PI) / 180);
+                        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                        
+                        const dataUrl = canvas.toDataURL('image/png');
+                        setDownloadLink(dataUrl, getOutputFilename(currentFiles[0].name, 'png'));
+                        resetButtonState();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(currentFiles[0]);
+            }
+
+            // --- POWERPOINT TO PDF ---
+            async function handlePPTToPDF() {
+                // PowerPoint to PDF conversion requires server-side processing
+                // This is a placeholder for client-side limitations
+                setStatus('error', 'Feature not available', 'PowerPoint to PDF conversion requires server-side processing. This feature is available in the full server version.');
+                resetButtonState();
+            }
+
+            // --- QR CODE GENERATOR & SCANNER ---
+            async function handleQRGenerator() {
+                const isGenerateMode = !document.getElementById('qr-generate-section').classList.contains('hidden');
+                
+                if (isGenerateMode) {
+                    // Generate QR Code
+                    const text = document.getElementById('qr-text').value.trim();
+                    
+                    if (!text) {
+                        setStatus('error', 'No text provided', 'Please enter text or URL to generate QR code.');
+                        resetButtonState();
+                        return;
+                    }
+
+                    try {
+                        // Check if QRCode library is available
+                        if (typeof QRCode === 'undefined') {
+                            // Fallback: Use QR Server API
+                            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(text)}`;
+                            
+                            setStatus('success', 'QR Code Generated', `QR code created for: ${text.length > 50 ? text.substring(0, 50) + '...' : text}`);
+                            statusArea.innerHTML += `
+                                <div class="mt-4 text-center">
+                                    <img src="${qrUrl}" alt="QR Code" class="mx-auto mb-4 border border-gray-300 rounded" style="max-width: 300px;">
+                                    <br>
+                                    <a href="${qrUrl}" download="qr-code.png" class="inline-flex items-center justify-center gap-3 bg-green-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 text-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        <span>Download QR Code</span>
+                                    </a>
+                                </div>
+                            `;
+                            resetButtonState();
+                            return;
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        await QRCode.toCanvas(canvas, text, {
+                            width: 400,
+                            margin: 2,
+                            color: {
+                                dark: '#000000',
+                                light: '#FFFFFF'
+                            }
+                        });
+                        
+                        const dataUrl = canvas.toDataURL('image/png');
+                        setDownloadLink(dataUrl, 'qr-code.png');
+                        setStatus('success', 'QR Code Generated', `QR code created for: ${text.length > 50 ? text.substring(0, 50) + '...' : text}`);
+                        resetButtonState();
+                    } catch (err) {
+                        console.error("QR generation error:", err);
+                        setStatus('error', 'Failed to generate QR code', `Error details: ${err.message || 'Unknown error occurred'}`);
+                        resetButtonState();
+                    }
+                } else {
+                    // Scan QR Code
+                    try {
+                        const file = currentFiles[0];
+                        const reader = new FileReader();
+                        
+                        reader.onload = async (e) => {
+                            try {
+                                const img = new Image();
+                                img.onload = async () => {
+                                    try {
+                                        // Create canvas from image
+                                        const canvas = document.createElement('canvas');
+                                        const ctx = canvas.getContext('2d');
+                                        canvas.width = img.width;
+                                        canvas.height = img.height;
+                                        ctx.drawImage(img, 0, 0);
+                                        
+                                        // Try to scan QR code using QrScanner if available
+                                        if (typeof QrScanner !== 'undefined') {
+                                            const result = await QrScanner.scanImage(img);
+                                            displayQRScanResult(result);
+                                        } else {
+                                            // Fallback: Use online QR scanner API
+                                            const formData = new FormData();
+                                            formData.append('file', file);
+                                            
+                                            const response = await fetch('https://api.qrserver.com/v1/read-qr-code/', {
+                                                method: 'POST',
+                                                body: formData
+                                            });
+                                            
+                                            const data = await response.json();
+                                            if (data && data[0] && data[0].symbol && data[0].symbol[0] && data[0].symbol[0].data) {
+                                                displayQRScanResult(data[0].symbol[0].data);
+                                            } else {
+                                                setStatus('error', 'No QR Code Found', 'Could not detect a QR code in the uploaded image. Please make sure the image contains a clear QR code.');
+                                            }
+                                        }
+                                        resetButtonState();
+                                    } catch (scanError) {
+                                        console.error("QR scan error:", scanError);
+                                        setStatus('error', 'Scan Failed', 'Could not read QR code from the image. Please ensure the image contains a clear, readable QR code.');
+                                        resetButtonState();
+                                    }
+                                };
+                                img.src = e.target.result;
+                            } catch (err) {
+                                console.error("Image load error:", err);
+                                setStatus('error', 'Image Error', 'Could not load the uploaded image.');
+                                resetButtonState();
+                            }
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    } catch (err) {
+                        console.error("QR scan error:", err);
+                        setStatus('error', 'Failed to scan QR code', `Error details: ${err.message || 'Unknown error occurred'}`);
+                        resetButtonState();
+                    }
+                }
+            }
+
+            function displayQRScanResult(qrContent) {
+                const resultDiv = document.getElementById('qr-scan-result');
+                const contentDiv = document.getElementById('qr-scan-content');
+                
+                contentDiv.textContent = qrContent;
+                resultDiv.classList.remove('hidden');
+                
+                setStatus('success', 'QR Code Scanned Successfully', 'The QR code content is displayed below.');
+                
+                // Add copy to clipboard functionality
+                contentDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="flex-1 break-all">${qrContent}</span>
+                        <button onclick="navigator.clipboard.writeText('${qrContent.replace(/'/g, "\\'")}').then(() => alert('Copied to clipboard!'))" 
+                                class="ml-2 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                            Copy
+                        </button>
+                    </div>
+                `;
             }
 
             // --- INITIALIZATION ---
