@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Debug Info - File Converter</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .info-box {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-ok { border-left: 4px solid #22c55e; }
+        .status-warning { border-left: 4px solid #f59e0b; }
+        .status-error { border-left: 4px solid #ef4444; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #4338ca; }
+    </style>
+</head>
+<body>
+    <h1>🔧 PWA Debug Information</h1>
+    
+    <div class="info-box">
+        <h2>Basic Info</h2>
+        <div id="basic-info"></div>
+    </div>
+
+    <div class="info-box">
+        <h2>PWA Support</h2>
+        <div id="pwa-info"></div>
+    </div>
+
+    <div class="info-box">
+        <h2>Service Worker</h2>
+        <div id="sw-info"></div>
+    </div>
+
+    <div class="info-box">
+        <h2>Manifest</h2>
+        <div id="manifest-info"></div>
+    </div>
+
+    <div class="info-box">
+        <h2>Install Status</h2>
+        <div id="install-info"></div>
+    </div>
+
+    <div class="info-box">
+        <h2>Actions</h2>
+        <button onclick="location.href='index.html'">Go to App</button>
+        <button onclick="location.reload()">Refresh Debug</button>
+        <button onclick="unregisterSW()">Unregister SW</button>
+        <button onclick="clearCache()">Clear Cache</button>
+    </div>
+
+    <script>
+        async function updateDebugInfo() {
+            // Basic Info
+            document.getElementById('basic-info').innerHTML = `
+                <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                <strong>Platform:</strong> ${navigator.platform}<br>
+                <strong>URL:</strong> ${location.href}<br>
+                <strong>Protocol:</strong> ${location.protocol}<br>
+                <strong>Is Standalone:</strong> ${window.matchMedia('(display-mode: standalone)').matches}<br>
+                <strong>iOS Standalone:</strong> ${window.navigator.standalone || false}<br>
+            `;
+
+            // PWA Support
+            const supportsServiceWorker = 'serviceWorker' in navigator;
+            const supportsManifest = 'manifest' in document.createElement('link');
+            const supportsPWA = supportsServiceWorker && supportsManifest;
+            
+            document.getElementById('pwa-info').innerHTML = `
+                <div class="${supportsServiceWorker ? 'status-ok' : 'status-error'}">
+                    <strong>Service Worker:</strong> ${supportsServiceWorker ? '✓ Supported' : '✗ Not Supported'}
+                </div>
+                <div class="${supportsManifest ? 'status-ok' : 'status-error'}">
+                    <strong>Manifest:</strong> ${supportsManifest ? '✓ Supported' : '✗ Not Supported'}
+                </div>
+                <div class="${supportsPWA ? 'status-ok' : 'status-error'}">
+                    <strong>PWA Support:</strong> ${supportsPWA ? '✓ Full Support' : '✗ Limited Support'}
+                </div>
+            `;
+
+            // Service Worker Info
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        document.getElementById('sw-info').innerHTML = `
+                            <div class="status-ok">
+                                <strong>Status:</strong> ✓ Registered<br>
+                                <strong>Scope:</strong> ${registration.scope}<br>
+                                <strong>State:</strong> ${registration.active ? registration.active.state : 'No active worker'}<br>
+                                <strong>Update Found:</strong> ${registration.waiting ? 'Yes' : 'No'}
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('sw-info').innerHTML = `
+                            <div class="status-warning">
+                                <strong>Status:</strong> ⚠️ Not Registered
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    document.getElementById('sw-info').innerHTML = `
+                        <div class="status-error">
+                            <strong>Error:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+            } else {
+                document.getElementById('sw-info').innerHTML = `
+                    <div class="status-error">
+                        <strong>Status:</strong> ✗ Service Worker not supported
+                    </div>
+                `;
+            }
+
+            // Manifest Info
+            try {
+                const response = await fetch('./manifest.json');
+                const manifest = await response.json();
+                document.getElementById('manifest-info').innerHTML = `
+                    <div class="status-ok">
+                        <strong>Status:</strong> ✓ Found<br>
+                        <strong>Name:</strong> ${manifest.name}<br>
+                        <strong>Short Name:</strong> ${manifest.short_name}<br>
+                        <strong>Start URL:</strong> ${manifest.start_url}<br>
+                        <strong>Display:</strong> ${manifest.display}<br>
+                        <strong>Icons:</strong> ${manifest.icons.length} found<br>
+                        <pre>${JSON.stringify(manifest, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('manifest-info').innerHTML = `
+                    <div class="status-error">
+                        <strong>Error loading manifest:</strong> ${error.message}
+                    </div>
+                `;
+            }
+
+            // Install Status
+            const isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            document.getElementById('install-info').innerHTML = `
+                <div class="${isInstalled ? 'status-ok' : 'status-warning'}">
+                    <strong>Install Status:</strong> ${isInstalled ? '✓ Installed' : '⚠️ Not Installed'}<br>
+                    <strong>Can Install:</strong> <span id="can-install">Checking...</span>
+                </div>
+            `;
+
+            // Check if can install
+            window.addEventListener('beforeinstallprompt', (e) => {
+                document.getElementById('can-install').textContent = '✓ Yes (prompt available)';
+            });
+
+            setTimeout(() => {
+                if (document.getElementById('can-install').textContent === 'Checking...') {
+                    document.getElementById('can-install').textContent = isInstalled ? 'Already installed' : '✗ No prompt available';
+                }
+            }, 1000);
+        }
+
+        async function unregisterSW() {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    await registration.unregister();
+                    alert('Service Worker unregistered. Refresh to see changes.');
+                } else {
+                    alert('No Service Worker to unregister.');
+                }
+            }
+        }
+
+        async function clearCache() {
+            if ('caches' in window) {
+                const names = await caches.keys();
+                await Promise.all(names.map(name => caches.delete(name)));
+                alert(`Cleared ${names.length} cache(s). Refresh to see changes.`);
+            } else {
+                alert('Cache API not supported.');
+            }
+        }
+
+        // Initialize
+        updateDebugInfo();
+    </script>
+</body>
+</html>
