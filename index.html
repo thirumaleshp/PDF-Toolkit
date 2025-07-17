@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All-in-One File Converter</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="File Converter">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
@@ -17,6 +25,37 @@
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+    <!-- PWA Install Popup -->
+    <div id="pwa-install-popup" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center sm:justify-center p-4 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl transform transition-all duration-300">
+            <div class="flex items-center mb-4">
+                <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-full mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 dark:text-indigo-400">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Install File Converter</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Add to your home screen</p>
+                </div>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">
+                Install this app on your device for quick access and offline use. All your conversions happen locally - no internet required!
+            </p>
+            <div class="flex gap-3">
+                <button id="pwa-install-btn" class="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+                    Install App
+                </button>
+                <button id="pwa-dismiss-btn" class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    Not Now
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Library Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -138,7 +177,7 @@
                         </div>
 
                         <!-- File Input -->
-                        <div class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                        <div id="file-upload-container" class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
                             <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                             <label for="file-upload" class="relative cursor-pointer mt-4 font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
                                 <span id="file-upload-text">Upload a file</span>
@@ -168,6 +207,92 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- PWA INSTALL FUNCTIONALITY ---
+            let deferredPrompt;
+            const pwaInstallPopup = document.getElementById('pwa-install-popup');
+            const pwaInstallBtn = document.getElementById('pwa-install-btn');
+            const pwaDismissBtn = document.getElementById('pwa-dismiss-btn');
+
+            // Check if device is mobile
+            function isMobileDevice() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+
+            // Check if app is already installed
+            function isAppInstalled() {
+                return window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true ||
+                       localStorage.getItem('pwa-dismissed') === 'true';
+            }
+
+            // Show install popup
+            function showInstallPopup() {
+                if (isMobileDevice() && !isAppInstalled()) {
+                    setTimeout(() => {
+                        pwaInstallPopup.classList.remove('hidden');
+                    }, 2000); // Show after 2 seconds
+                }
+            }
+
+            // Listen for beforeinstallprompt event
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                showInstallPopup();
+            });
+
+            // Handle install button click
+            pwaInstallBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                } else {
+                    // Fallback for iOS Safari
+                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        alert('To install this app on your iOS device, tap the Share button and then "Add to Home Screen".');
+                    } else {
+                        alert('To install this app, use your browser\'s "Add to Home Screen" option.');
+                    }
+                }
+                pwaInstallPopup.classList.add('hidden');
+            });
+
+            // Handle dismiss button click
+            pwaDismissBtn.addEventListener('click', () => {
+                localStorage.setItem('pwa-dismissed', 'true');
+                pwaInstallPopup.classList.add('hidden');
+            });
+
+            // Close popup when clicking outside
+            pwaInstallPopup.addEventListener('click', (e) => {
+                if (e.target === pwaInstallPopup) {
+                    localStorage.setItem('pwa-dismissed', 'true');
+                    pwaInstallPopup.classList.add('hidden');
+                }
+            });
+
+            // Show popup on first visit for mobile users (fallback)
+            if (isMobileDevice() && !isAppInstalled() && !deferredPrompt) {
+                showInstallPopup();
+            }
+
+            // --- SERVICE WORKER REGISTRATION ---
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then((registration) => {
+                            console.log('SW registered: ', registration);
+                        })
+                        .catch((registrationError) => {
+                            console.log('SW registration failed: ', registrationError);
+                        });
+                });
+            }
+
             // --- GLOBAL VARIABLES ---
             const { jsPDF } = window.jspdf;
             const { PDFLib } = window;
@@ -179,6 +304,7 @@
             const toolGrid = document.getElementById('tool-grid');
             const backButton = document.getElementById('back-button');
             const fileInput = document.getElementById('file-upload');
+            const fileUploadContainer = document.getElementById('file-upload-container');
             const fileUploadText = document.getElementById('file-upload-text');
             const fileNameDisplay = document.getElementById('file-name-display');
             const convertButton = document.getElementById('convert-button');
@@ -396,15 +522,14 @@
                     outputFormatContainer.classList.remove('hidden');
                 } else if (tool.id === 'qrGenerator') {
                     document.getElementById('qr-text-container').classList.remove('hidden');
-                    // Show file input for QR scanner mode (hidden initially)
-                    fileInput.parentElement.style.display = 'block';
-                    fileInput.style.display = 'none'; // Hide initially, show when scan tab is active
+                    // Hide file upload container for generate mode (default tab)
+                    fileUploadContainer.style.display = 'none';
                     // Show convert button immediately for QR generator
                     convertButton.classList.remove('hidden');
                     convertButton.disabled = false;
                     convertButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg><span>Generate QR Code</span>`;
                 } else {
-                    fileInput.parentElement.style.display = 'block';
+                    fileUploadContainer.style.display = 'block';
                 }
 
                 homeScreen.classList.add('hidden');
@@ -429,7 +554,7 @@
                 document.getElementById('resize-width').value = '';
                 document.getElementById('resize-height').value = '';
                 document.getElementById('qr-scan-result').classList.add('hidden');
-                fileInput.parentElement.style.display = 'block';
+                fileUploadContainer.style.display = 'block';
             }
 
             // --- EVENT LISTENERS ---
@@ -475,9 +600,8 @@
                 document.getElementById('qr-scan-tab').className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium';
                 document.getElementById('qr-generate-section').classList.remove('hidden');
                 document.getElementById('qr-scan-section').classList.add('hidden');
-                fileInput.style.display = 'none';
-                fileInput.parentElement.querySelector('label').style.display = 'none';
-                fileInput.parentElement.querySelector('p').style.display = 'none';
+                // Hide the entire file upload container for generate mode
+                fileUploadContainer.style.display = 'none';
                 
                 // Update button text and state
                 const qrText = document.getElementById('qr-text').value.trim();
@@ -496,9 +620,8 @@
                 document.getElementById('qr-generate-tab').className = 'flex-1 py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium';
                 document.getElementById('qr-generate-section').classList.add('hidden');
                 document.getElementById('qr-scan-section').classList.remove('hidden');
-                fileInput.style.display = 'block';
-                fileInput.parentElement.querySelector('label').style.display = 'block';
-                fileInput.parentElement.querySelector('p').style.display = 'block';
+                // Show the file upload container for scan mode
+                fileUploadContainer.style.display = 'block';
                 
                 // Update button text and state
                 convertButton.disabled = currentFiles.length === 0;
