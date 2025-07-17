@@ -17,14 +17,107 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body {
             font-family: 'Inter', sans-serif;
+            transition: padding-top 0.3s ease;
+        }
+        body.has-install-banner {
+            padding-top: 80px;
         }
         .hidden { display: none; }
         .prose table { border-collapse: collapse; width: 100%; }
         .prose th, .prose td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
         .prose th { background-color: #f2f2f2; }
+        
+        @media (max-width: 640px) {
+            body.has-install-banner {
+                padding-top: 90px;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+    <!-- Improved PWA Install Banner -->
+    <div id="pwa-install-banner" class="fixed top-0 left-0 right-0 bg-indigo-600 text-white z-50 transform -translate-y-full transition-transform duration-300 shadow-lg">
+        <div class="flex items-center justify-between p-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-white bg-opacity-20 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <div>
+                    <div class="font-semibold text-sm">Install File Converter</div>
+                    <div class="text-xs text-indigo-100">Add to home screen for quick access</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="pwa-install-btn" class="bg-white text-indigo-600 px-4 py-2 rounded-md text-sm font-semibold hover:bg-indigo-50 transition-colors">
+                    Install
+                </button>
+                <button id="pwa-dismiss-btn" class="text-indigo-100 hover:text-white p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile PWA Install Modal -->
+    <div id="pwa-install-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center p-4 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-t-2xl w-full max-w-md transform transition-all duration-300">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 dark:text-indigo-400">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Install File Converter</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Add to your home screen</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        Get quick access to the file converter directly from your home screen. Works offline and loads instantly!
+                    </p>
+                    <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            <span>Private & Secure</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            </svg>
+                            <span>Works Offline</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button id="pwa-modal-install-btn" class="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+                        Install App
+                    </button>
+                    <button id="pwa-modal-dismiss-btn" class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        Not Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Library Scripts - Loaded Dynamically for Performance -->
     <script>
@@ -209,12 +302,140 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- SIMPLE PWA SUPPORT ---
-            // Let the browser handle install prompts natively
+            // --- IMPROVED PWA INSTALL FUNCTIONALITY ---
+            let deferredPrompt;
+            const installBanner = document.getElementById('pwa-install-banner');
+            const installModal = document.getElementById('pwa-install-modal');
+            const bannerInstallBtn = document.getElementById('pwa-install-btn');
+            const bannerDismissBtn = document.getElementById('pwa-dismiss-btn');
+            const modalInstallBtn = document.getElementById('pwa-modal-install-btn');
+            const modalDismissBtn = document.getElementById('pwa-modal-dismiss-btn');
+
+            // Check if device is mobile
+            function isMobileDevice() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+
+            // Check if app is already installed
+            function isAppInstalled() {
+                return window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true;
+            }
+
+            // Check if user has dismissed install prompt recently
+            function hasRecentlyDismissed() {
+                const dismissed = localStorage.getItem('pwa-dismissed-time');
+                if (!dismissed) return false;
+                const dismissTime = parseInt(dismissed);
+                const hoursSinceDismiss = (Date.now() - dismissTime) / (1000 * 60 * 60);
+                return hoursSinceDismiss < 24; // Don't show again for 24 hours
+            }
+
+            // Show install banner
+            function showInstallBanner() {
+                if (!isAppInstalled() && !hasRecentlyDismissed()) {
+                    installBanner.classList.remove('-translate-y-full');
+                    installBanner.classList.add('translate-y-0');
+                    document.body.classList.add('has-install-banner');
+                }
+            }
+
+            // Hide install banner
+            function hideInstallBanner() {
+                installBanner.classList.remove('translate-y-0');
+                installBanner.classList.add('-translate-y-full');
+                document.body.classList.remove('has-install-banner');
+            }
+
+            // Show install modal (for mobile)
+            function showInstallModal() {
+                if (isMobileDevice() && !isAppInstalled() && !hasRecentlyDismissed()) {
+                    installModal.classList.remove('hidden');
+                    // Add animation
+                    setTimeout(() => {
+                        installModal.querySelector('div > div').classList.add('translate-y-0');
+                    }, 10);
+                }
+            }
+
+            // Hide install modal
+            function hideInstallModal() {
+                installModal.classList.add('hidden');
+            }
+
+            // Handle install action
+            async function handleInstall() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    
+                    if (outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        // User dismissed the native prompt
+                        localStorage.setItem('pwa-dismissed-time', Date.now().toString());
+                    }
+                    deferredPrompt = null;
+                    hideInstallBanner();
+                    hideInstallModal();
+                } else {
+                    // Show manual install instructions
+                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        alert('To install this app on iOS:\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm');
+                    } else if (/Android/i.test(navigator.userAgent)) {
+                        alert('To install this app on Android:\n1. Tap the menu button (three dots)\n2. Tap "Add to Home screen" or "Install app"\n3. Tap "Add" to confirm');
+                    } else {
+                        alert('To install this app:\n1. Look for "Add to Home Screen" or "Install" in your browser menu\n2. Follow the prompts to add the app');
+                    }
+                    hideInstallBanner();
+                    hideInstallModal();
+                }
+            }
+
+            // Handle dismiss action
+            function handleDismiss() {
+                localStorage.setItem('pwa-dismissed-time', Date.now().toString());
+                hideInstallBanner();
+                hideInstallModal();
+            }
+
+            // Listen for beforeinstallprompt event
             window.addEventListener('beforeinstallprompt', (e) => {
-                // Don't prevent the default - let browser show native prompt
-                console.log('PWA install prompt available');
+                e.preventDefault();
+                deferredPrompt = e;
+                
+                // Show banner for desktop, modal for mobile after a delay
+                setTimeout(() => {
+                    if (isMobileDevice()) {
+                        showInstallModal();
+                    } else {
+                        showInstallBanner();
+                    }
+                }, 3000); // Show after 3 seconds
             });
+
+            // Event listeners
+            bannerInstallBtn.addEventListener('click', handleInstall);
+            bannerDismissBtn.addEventListener('click', handleDismiss);
+            modalInstallBtn.addEventListener('click', handleInstall);
+            modalDismissBtn.addEventListener('click', handleDismiss);
+
+            // Close modal when clicking outside
+            installModal.addEventListener('click', (e) => {
+                if (e.target === installModal) {
+                    handleDismiss();
+                }
+            });
+
+            // For mobile devices that don't support beforeinstallprompt (iOS Safari)
+            if (isMobileDevice() && !isAppInstalled() && !hasRecentlyDismissed()) {
+                // Show modal after 5 seconds for iOS Safari and other browsers
+                setTimeout(() => {
+                    if (!deferredPrompt) {
+                        showInstallModal();
+                    }
+                }, 5000);
+            }
 
             // --- ERROR HANDLING ---
             window.addEventListener('error', (e) => {
