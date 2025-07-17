@@ -15,22 +15,6 @@ pdf_toolkit = PDFToolkit()
 def index():
     return render_template('index.html')
 
-@app.route('/merge')
-def merge_page():
-    return render_template('merge.html')
-
-@app.route('/convert')
-def convert_page():
-    return render_template('convert.html')
-
-@app.route('/split')
-def split_page():
-    return render_template('split.html')
-
-@app.route('/export')
-def export_page():
-    return render_template('export.html')
-
 @app.route('/api/merge', methods=['POST'])
 def merge_pdfs():
     if 'files' not in request.files:
